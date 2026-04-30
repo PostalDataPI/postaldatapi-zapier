@@ -1,4 +1,4 @@
-import type { ZObject, Bundle, Search } from 'zapier-platform-core';
+import type { ZObject, Bundle, Create } from 'zapier-platform-core';
 
 const PROD_BASE = 'https://postaldatapi.com';
 
@@ -74,15 +74,24 @@ const perform = async (z: ZObject, bundle: Bundle) => {
     body: { records },
   });
   const data = response.data as Record<string, unknown>;
-  // Zapier searches expect an array of result rows. We flatten one row per
-  // input record (each with its own id) so users can fan out downstream.
   const results = (data.results as Array<Record<string, unknown>>) ?? [];
-  return results.map((r, i) => ({
-    ...r,
-    id: `${r.postalCode}|${r.countryCode}|${i}`,
+
+  // Bulk actions in Zapier return ONE wrapper object, not an array — the
+  // standard pattern for batch operations (Twilio, Mailgun, Salesforce).
+  // Per-record processing downstream uses Looping by Zapier on `results`.
+  // We also surface a few convenience scalars for at-a-glance Zaps.
+  const validCount = results.filter((r) => r.valid === true).length;
+  const invalidCount = results.length - validCount;
+
+  return {
+    id: `bulk-${Date.now()}`,
+    results,
+    totalRecords: results.length,
+    validCount,
+    invalidCount,
     totalCost: data.totalCost,
     balance: data.balance,
-  }));
+  };
 };
 
 export default {
@@ -123,23 +132,32 @@ export default {
     ],
     perform,
     sample: {
-      id: '90210|US|0',
-      postalCode: '90210',
-      countryCode: 'US',
-      valid: true,
-      normalized: '90210',
-      reason: null,
-      totalCost: 0.000028,
+      id: 'bulk-1730000000000',
+      totalRecords: 3,
+      validCount: 2,
+      invalidCount: 1,
+      totalCost: 0.000084,
       balance: 4.99972,
+      results: [
+        { postalCode: '90210', countryCode: 'US', valid: true, normalized: '90210', reason: null },
+        { postalCode: 'SW1A 1AA', countryCode: 'GB', valid: true, normalized: 'SW1A', reason: null },
+        { postalCode: 'FOO99', countryCode: 'US', valid: false, normalized: null, reason: 'not_found' },
+      ],
     },
     outputFields: [
-      { key: 'postalCode', label: 'Postal Code' },
-      { key: 'countryCode', label: 'Country Code' },
-      { key: 'valid', label: 'Valid', type: 'boolean' },
-      { key: 'normalized', label: 'Normalized Form (canonical key when valid; e.g. SW1A for GB)' },
-      { key: 'reason', label: 'Reason (null | not_found | invalid_format | unknown_country)' },
+      { key: 'totalRecords', label: 'Total Records Processed', type: 'integer' },
+      { key: 'validCount', label: 'Valid Count', type: 'integer' },
+      { key: 'invalidCount', label: 'Invalid Count', type: 'integer' },
       { key: 'totalCost', label: 'Request Total Cost (USD)', type: 'number' },
       { key: 'balance', label: 'Account Balance (USD)', type: 'number' },
+      // Per-record results live in `results[]`. Downstream Zaps can use
+      // Looping by Zapier to iterate, or map specific indices like
+      // results[0].valid, results[0].normalized, etc.
+      { key: 'results[]postalCode', label: 'Result Postal Code' },
+      { key: 'results[]countryCode', label: 'Result Country Code' },
+      { key: 'results[]valid', label: 'Result Valid', type: 'boolean' },
+      { key: 'results[]normalized', label: 'Result Normalized (canonical key)' },
+      { key: 'results[]reason', label: 'Result Reason (null | not_found | invalid_format | unknown_country)' },
     ],
   },
-} satisfies Search;
+} satisfies Create;

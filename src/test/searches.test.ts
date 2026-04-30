@@ -41,40 +41,45 @@ describe('validatePostalCode', () => {
   });
 });
 
-describe('validateBulkPostalCodes', () => {
+describe('validateBulkPostalCodes (Create — wrapper return shape)', () => {
   it('handles line-item input shape', async () => {
-    const results = await appTester(App.searches!.validateBulkPostalCodes.operation.perform, {
+    const result = await appTester(App.creates!.validateBulkPostalCodes.operation.perform, {
       ...auth,
       inputData: {
         postalCodes: ['90210', 'FOO99', '12345'],
         countryCodes: ['US', 'US', 'ZZ'],
       },
     });
-    expect(results).toHaveLength(3);
-    expect(results[0].valid).toBe(true);
-    expect(results[1].valid).toBe(false);
-    expect(results[1].reason).toBe('not_found');
-    expect(results[2].valid).toBe(false);
-    expect(results[2].reason).toBe('unknown_country');
+    expect(result.totalRecords).toBe(3);
+    expect(result.validCount).toBe(1);
+    expect(result.invalidCount).toBe(2);
+    expect(result.results).toHaveLength(3);
+    expect(result.results[0].valid).toBe(true);
+    expect(result.results[1].valid).toBe(false);
+    expect(result.results[1].reason).toBe('not_found');
+    expect(result.results[2].valid).toBe(false);
+    expect(result.results[2].reason).toBe('unknown_country');
+    expect(result.totalCost).toBeGreaterThan(0);
+    expect(typeof result.balance).toBe('number');
   });
 
   it('handles CSV input shape', async () => {
-    const results = await appTester(App.searches!.validateBulkPostalCodes.operation.perform, {
+    const result = await appTester(App.creates!.validateBulkPostalCodes.operation.perform, {
       ...auth,
       inputData: {
         recordsCsv: '90210,US\nSW1A 1AA,GB\n10115,DE',
       },
     });
-    expect(results).toHaveLength(3);
-    expect(results.every((r: { valid: boolean }) => r.valid)).toBe(true);
-    // GB outcode normalization
-    const gb = results.find((r: { countryCode: string }) => r.countryCode === 'GB');
+    expect(result.totalRecords).toBe(3);
+    expect(result.validCount).toBe(3);
+    expect(result.results.every((r: { valid: boolean }) => r.valid)).toBe(true);
+    const gb = result.results.find((r: { countryCode: string }) => r.countryCode === 'GB');
     expect(gb?.normalized).toBe('SW1A');
   });
 
   it('rejects mismatched line-item lengths', async () => {
     try {
-      await appTester(App.searches!.validateBulkPostalCodes.operation.perform, {
+      await appTester(App.creates!.validateBulkPostalCodes.operation.perform, {
         ...auth,
         inputData: {
           postalCodes: ['90210', '10001'],

@@ -29,10 +29,15 @@ export default defineApp({
   searches: {
     [lookupPostalCode.key]: lookupPostalCode,
     [validatePostalCode.key]: validatePostalCode,
-    [validateBulkPostalCodes.key]: validateBulkPostalCodes,
     [searchByCity.key]: searchByCity,
     [getPostalCodeMetadata.key]: getPostalCodeMetadata,
   },
 
-  creates: {},
+  // Bulk Validate is a Create, NOT a Search — Zapier searches semantically
+  // mean "find ONE record" and auto-truncate the result set to the first
+  // entry. Bulk validation is a batch *action* and returns a wrapper object
+  // with all results nested.
+  creates: {
+    [validateBulkPostalCodes.key]: validateBulkPostalCodes,
+  },
 });
