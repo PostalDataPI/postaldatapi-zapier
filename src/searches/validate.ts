@@ -35,6 +35,7 @@ export default {
         label: 'Postal Code',
         type: 'string',
         required: true,
+        helpText: 'The postal code to validate. Examples: "90210", "SW1A 1AA", "10115", "100-0001".',
       },
       {
         key: 'countryCode',

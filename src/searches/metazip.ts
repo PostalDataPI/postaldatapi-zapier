@@ -33,7 +33,7 @@ export default {
   display: {
     label: 'Get Postal Code Metadata',
     description:
-      'Get full metadata for a postal code, including coordinates and country-specific fields. For US: state, county, timezone. For non-US: whatever the data source provides (province, prefecture, municipality, …).',
+      'Get full metadata for a postal code, including coordinates, administrative regions, and country-specific fields.',
   },
   operation: {
     inputFields: [
@@ -42,6 +42,7 @@ export default {
         label: 'Postal Code',
         type: 'string',
         required: true,
+        helpText: 'The postal code to look up. Examples: "90210", "SW1A 1AA", "10115", "100-0001".',
       },
       {
         key: 'countryCode',
@@ -49,6 +50,7 @@ export default {
         type: 'string',
         required: true,
         default: 'US',
+        helpText: 'ISO 3166-1 alpha-2 country code. Examples: US, GB, DE, JP, BR, CA. Full list at [postaldatapi.com/countries](https://postaldatapi.com/countries).',
       },
     ],
     perform,

@@ -100,7 +100,7 @@ export default {
   display: {
     label: 'Bulk Validate Postal Codes',
     description:
-      'Validate up to 1,000 postal codes in one request. Mixed countries supported. Same flat per-record price as the single Validate action — no bulk discount or premium. Ideal for list cleanup and CRM data hygiene.',
+      'Validate up to 1,000 postal codes in a single request. Postal codes from multiple countries can be mixed in the same request.',
   },
   operation: {
     inputFields: [

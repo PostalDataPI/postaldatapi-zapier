@@ -28,7 +28,7 @@ export default {
   display: {
     label: 'Lookup Postal Code',
     description:
-      'Look up city, state, and coordinates for a postal code. Works for ZIP codes (US), postcodes (UK), PLZ (Germany), CEPs (Brazil), and 240+ countries and territories.',
+      'Look up the city, state, and coordinates for a postal code in a given country.',
   },
   operation: {
     inputFields: [

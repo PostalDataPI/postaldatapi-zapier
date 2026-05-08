@@ -23,16 +23,19 @@ export default {
       key: 'apiKey',
       label: 'API Key',
       required: true,
-      type: 'string',
+      // 'password' (not 'string') so Zapier masks the input field — protects
+      // the user's credential during entry. (Zapier publishing requirement.)
+      type: 'password',
       helpText:
-        'Get your API key at https://postaldatapi.com/account → API Keys. New accounts include 1,000 free queries — no credit card required to sign up.',
+        'Get your API key at https://postaldatapi.com/account → API Keys.',
     },
   ],
 
   test,
 
-  // Connection label shows the user's account in the Zap editor when they
-  // pick which account to use. We surface their balance so they know which
-  // key is which when they have several.
-  connectionLabel: 'PostalDataPI (balance ${{bundle.inputData.balance}})',
+  // No connectionLabel. Per Zapier publishing guidance, connection labels
+  // must not contain the integration name or sensitive data (balance was
+  // previously surfaced here — flagged in review). Leaving this unset lets
+  // Zapier auto-number connections, which is fine for the typical
+  // single-key user.
 } satisfies Authentication;

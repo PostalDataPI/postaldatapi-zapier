@@ -53,6 +53,7 @@ export default {
         label: 'City',
         type: 'string',
         required: true,
+        helpText: 'The city name to search for. Examples: "Beverly Hills", "London", "Berlin", "Tokyo".',
       },
       {
         key: 'state',
@@ -68,6 +69,7 @@ export default {
         type: 'string',
         required: true,
         default: 'US',
+        helpText: 'ISO 3166-1 alpha-2 country code. Examples: US, GB, DE, JP, BR, CA. Full list at [postaldatapi.com/countries](https://postaldatapi.com/countries).',
       },
     ],
     perform,
