@@ -1,5 +1,5 @@
 /**
- * Smoke tests for all 5 searches against the live PostalDataPI production API.
+ * Smoke tests for all 5 creates against the live PostalDataPI production API.
  * Uses the demo HN API key (capped balance; safe for CI).
  */
 import { describe, expect, it } from 'vitest';
@@ -11,33 +11,33 @@ const appTester = zapier.createAppTester(App);
 const DEMO_KEY = process.env.DEMO_API_KEY || 'demo_hn_postaldatapi';
 const auth = { authData: { apiKey: DEMO_KEY } };
 
-describe('lookupPostalCode', () => {
+describe('lookupPostalCode (Create)', () => {
   it('looks up 90210 / US', async () => {
-    const results = await appTester(App.searches!.lookupPostalCode.operation.perform, {
+    const result = await appTester(App.creates!.lookupPostalCode.operation.perform, {
       ...auth,
       inputData: { postalCode: '90210', countryCode: 'US' },
     });
-    expect(Array.isArray(results)).toBe(true);
-    expect(results[0].city).toBe('Beverly Hills');
+    expect(result.city).toBe('Beverly Hills');
+    expect(result.id).toBe('90210|US');
   });
 
   it('looks up SW1A 1AA / GB and falls back to outcode', async () => {
-    const results = await appTester(App.searches!.lookupPostalCode.operation.perform, {
+    const result = await appTester(App.creates!.lookupPostalCode.operation.perform, {
       ...auth,
       inputData: { postalCode: 'SW1A 1AA', countryCode: 'GB' },
     });
-    expect(results[0]).toBeDefined();
-    expect(results[0].id).toBe('SW1A 1AA|GB');
+    expect(result).toBeDefined();
+    expect(result.id).toBe('SW1A 1AA|GB');
   });
 });
 
-describe('validatePostalCode', () => {
+describe('validatePostalCode (Create)', () => {
   it('validates a real US ZIP', async () => {
-    const results = await appTester(App.searches!.validatePostalCode.operation.perform, {
+    const result = await appTester(App.creates!.validatePostalCode.operation.perform, {
       ...auth,
       inputData: { postalCode: '10001', countryCode: 'US' },
     });
-    expect(results[0].valid).toBe(true);
+    expect(result.valid).toBe(true);
   });
 });
 
@@ -94,25 +94,27 @@ describe('validateBulkPostalCodes (Create — wrapper return shape)', () => {
   });
 });
 
-describe('searchByCity', () => {
+describe('searchByCity (Create — wrapper return shape)', () => {
   it('finds Beverly Hills postal codes (US, ST = CA)', async () => {
-    const results = await appTester(App.searches!.searchByCity.operation.perform, {
+    const result = await appTester(App.creates!.searchByCity.operation.perform, {
       ...auth,
       inputData: { city: 'Beverly Hills', state: 'CA', countryCode: 'US' },
     });
-    expect(results.length).toBeGreaterThan(0);
-    expect(results.some((r: { postalCode: string }) => r.postalCode === '90210')).toBe(true);
+    expect(result.totalResults).toBeGreaterThan(0);
+    expect(result.results.length).toBe(result.totalResults);
+    expect(result.results.some((r: { postalCode: string }) => r.postalCode === '90210')).toBe(true);
+    expect(result.countryCode).toBe('US');
   });
 });
 
-describe('getPostalCodeMetadata', () => {
+describe('getPostalCodeMetadata (Create)', () => {
   it('returns rich metadata for 90210', async () => {
-    const results = await appTester(App.searches!.getPostalCodeMetadata.operation.perform, {
+    const result = await appTester(App.creates!.getPostalCodeMetadata.operation.perform, {
       ...auth,
       inputData: { postalCode: '90210', countryCode: 'US' },
     });
-    expect(results[0].state).toBe('California');
-    expect(results[0].latitude).toBeTypeOf('number');
-    expect(results[0].timezone).toContain('America/');
+    expect(result.state).toBe('California');
+    expect(result.latitude).toBeTypeOf('number');
+    expect(result.timezone).toContain('America/');
   });
 });

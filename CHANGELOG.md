@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.3
+
+Consolidates the operation surface around Creates only — Search variants removed.
+
+* All five operations (`lookupPostalCode`, `validatePostalCode`, `validateBulkPostalCodes`, `searchByCity`, `getPostalCodeMetadata`) are now classified as Creates ("Actions" in Zapier UI terminology). The Search variants for the four non-bulk operations have been removed.
+* **Why:** Creates satisfy Zapier's "every Zap needs at least one Action" rule on Free-plan 2-step Zaps, which Searches alone do not. Creates can also still feed downstream steps in chained multi-step workflows, so the Search classification added no new capability we couldn't deliver via Creates. Removing the parallel surface halves the app-picker entries users see and eliminates the naming-disambiguation problem ("which Lookup do I pick — Search or Create?").
+* **Search→Create return-shape change** — `lookupPostalCode`, `validatePostalCode`, and `getPostalCodeMetadata` now return a single result object instead of a single-element array. Existing Zaps on v1.0.2 or earlier that referenced these as Searches would have been mapping `output[0].field`; on v1.0.3 they map `output.field` directly. (No v1.0.2 Search users known at release; migration impact expected to be zero.)
+* **`searchByCity` return-shape change** — same Search→Create motivation. Previously returned an array of N records (one per matched postal code). Now wraps in a single object with `results[]`, `totalResults`, `matchedCity`, `matchedState`, and aggregate balance. Same downstream-Zap iteration pattern as `validateBulkPostalCodes` (Looping by Zapier on `results[]`).
+* **File reorg** — `validate-bulk.ts` moved from `src/searches/` to `src/creates/` to match its classification (was a Create classified-via-`index.ts` but the file lived in `searches/` for historical reasons). `src/searches/` directory removed entirely.
+
+No REST API changes; no auth changes (no C007 migration concern). v1.0.1 users may need to delete-and-re-add action steps to bind to v1.0.3 once it's promoted, but the underlying HTTP calls and response shapes from PostalDataPI are unchanged.
+
 ## 1.0.2
 
 Addresses Zapier publishing-review feedback (review by Abraham D., 2026-05-06):

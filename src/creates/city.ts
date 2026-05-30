@@ -1,4 +1,4 @@
-import type { ZObject, Bundle, Search } from 'zapier-platform-core';
+import type { ZObject, Bundle, Create } from 'zapier-platform-core';
 
 const PROD_BASE = 'https://postaldatapi.com';
 
@@ -25,17 +25,27 @@ const perform = async (z: ZObject, bundle: Bundle) => {
   });
   const data = response.data as Record<string, unknown>;
   const zipcodes = (data.zipcodes as string[]) ?? [];
-  // One row per matching postal code so downstream Zap steps can iterate.
-  return zipcodes.map((pc, i) => ({
-    id: `${bundle.inputData.city}|${bundle.inputData.countryCode}|${pc}|${i}`,
-    postalCode: pc,
+  const countryCode = (bundle.inputData.countryCode as string).toUpperCase();
+
+  // Wrap the multi-record result in a single object (Create return shape).
+  // Downstream Zap steps use Looping by Zapier on `results[]` to iterate,
+  // or map specific indices like results[0].postalCode.
+  return {
+    id: `${bundle.inputData.city}|${countryCode}|${zipcodes.length}`,
     city: bundle.inputData.city,
     state: stateInput || null,
-    countryCode: (bundle.inputData.countryCode as string).toUpperCase(),
+    countryCode,
     matchedCity: data.matchedCity,
     matchedState: data.matchedState,
+    totalResults: zipcodes.length,
+    results: zipcodes.map((pc) => ({
+      postalCode: pc,
+      city: bundle.inputData.city,
+      state: stateInput || null,
+      countryCode,
+    })),
     balance: data.balance,
-  }));
+  };
 };
 
 export default {
@@ -74,23 +84,30 @@ export default {
     ],
     perform,
     sample: {
-      id: 'Beverly Hills|US|90210|0',
-      postalCode: '90210',
+      id: 'Beverly Hills|US|1',
       city: 'Beverly Hills',
       state: 'CA',
       countryCode: 'US',
       matchedCity: 'Beverly Hills',
       matchedState: 'California',
+      totalResults: 1,
+      results: [
+        { postalCode: '90210', city: 'Beverly Hills', state: 'CA', countryCode: 'US' },
+      ],
       balance: 4.99972,
     },
     outputFields: [
-      { key: 'postalCode', label: 'Postal Code' },
-      { key: 'city', label: 'City' },
+      { key: 'city', label: 'City (input)' },
       { key: 'state', label: 'State (input)' },
       { key: 'countryCode', label: 'Country Code' },
       { key: 'matchedCity', label: 'Matched City (server-resolved)' },
       { key: 'matchedState', label: 'Matched State (server-resolved)' },
+      { key: 'totalResults', label: 'Total Results', type: 'integer' },
       { key: 'balance', label: 'Account Balance (USD)', type: 'number' },
+      { key: 'results[]postalCode', label: 'Result Postal Code' },
+      { key: 'results[]city', label: 'Result City' },
+      { key: 'results[]state', label: 'Result State' },
+      { key: 'results[]countryCode', label: 'Result Country Code' },
     ],
   },
-} satisfies Search;
+} satisfies Create;

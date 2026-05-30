@@ -1,34 +1,37 @@
-import type { ZObject, Bundle, Search } from 'zapier-platform-core';
+import type { ZObject, Bundle, Create } from 'zapier-platform-core';
 
 const PROD_BASE = 'https://postaldatapi.com';
 
 const perform = async (z: ZObject, bundle: Bundle) => {
   const response = await z.request({
-    url: `${PROD_BASE}/api/lookup`,
+    url: `${PROD_BASE}/api/metazip`,
     method: 'POST',
     body: {
       zipcode: bundle.inputData.postalCode,
       country: (bundle.inputData.countryCode as string).toUpperCase(),
     },
   });
-  // Zapier expects searches to return an array of zero or more matches.
-  // The lookup endpoint either succeeds (one match) or 404s (caught by middleware).
   const data = response.data as Record<string, unknown>;
-  return [
-    {
-      ...data,
-      id: `${bundle.inputData.postalCode}|${bundle.inputData.countryCode}`,
-    },
-  ];
+  const meta = (data.meta as Record<string, unknown>) ?? {};
+  return {
+    ...meta,
+    // Promote frequently-needed fields to the top level so they're easy to
+    // map in Zaps without having to dive into a nested object.
+    id: `${bundle.inputData.postalCode}|${bundle.inputData.countryCode}`,
+    postalCode: bundle.inputData.postalCode,
+    countryCode: (bundle.inputData.countryCode as string).toUpperCase(),
+    meta,
+    balance: data.balance,
+  };
 };
 
 export default {
-  key: 'lookupPostalCode',
+  key: 'getPostalCodeMetadata',
   noun: 'Postal Code',
   display: {
-    label: 'Lookup Postal Code',
+    label: 'Get Postal Code Metadata',
     description:
-      'Look up the city, state, and coordinates for a postal code in a given country.',
+      'Get full metadata for a postal code, including coordinates, administrative regions, and country-specific fields.',
   },
   operation: {
     inputFields: [
@@ -51,20 +54,26 @@ export default {
     perform,
     sample: {
       id: '90210|US',
+      postalCode: '90210',
+      countryCode: 'US',
       city: 'Beverly Hills',
       state: 'California',
-      ST: 'CA',
+      stateAbbrev: 'CA',
+      county: 'Los Angeles County',
       latitude: 34.0901,
       longitude: -118.4065,
+      timezone: 'America/Los_Angeles',
       balance: 4.99972,
     },
     outputFields: [
       { key: 'city', label: 'City' },
       { key: 'state', label: 'State / Region' },
-      { key: 'ST', label: 'State Abbreviation' },
+      { key: 'stateAbbrev', label: 'State Abbreviation' },
+      { key: 'county', label: 'County / Municipality' },
       { key: 'latitude', label: 'Latitude', type: 'number' },
       { key: 'longitude', label: 'Longitude', type: 'number' },
+      { key: 'timezone', label: 'Timezone (US only)' },
       { key: 'balance', label: 'Account Balance (USD)', type: 'number' },
     ],
   },
-} satisfies Search;
+} satisfies Create;

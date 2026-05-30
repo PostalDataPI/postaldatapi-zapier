@@ -1,4 +1,4 @@
-import type { ZObject, Bundle, Search } from 'zapier-platform-core';
+import type { ZObject, Bundle, Create } from 'zapier-platform-core';
 
 const PROD_BASE = 'https://postaldatapi.com';
 
@@ -12,12 +12,10 @@ const perform = async (z: ZObject, bundle: Bundle) => {
     },
   });
   const data = response.data as Record<string, unknown>;
-  return [
-    {
-      ...data,
-      id: `${bundle.inputData.postalCode}|${bundle.inputData.countryCode}`,
-    },
-  ];
+  return {
+    ...data,
+    id: `${bundle.inputData.postalCode}|${bundle.inputData.countryCode}`,
+  };
 };
 
 export default {
@@ -59,4 +57,4 @@ export default {
       { key: 'balance', label: 'Account Balance (USD)', type: 'number' },
     ],
   },
-} satisfies Search;
+} satisfies Create;
