@@ -1,5 +1,19 @@
 import type { ZObject, Bundle, BeforeRequestMiddleware, AfterResponseMiddleware } from 'zapier-platform-core';
 
+import packageJson from '../package.json' with { type: 'json' };
+
+/**
+ * Tag every outgoing request with an `X-Source` header so the PostalDataPI
+ * server can attribute traffic by integration (vs SDKs, MCP, or direct API
+ * users). The server reads this header and surfaces it in [PERF] log lines
+ * and Sentry tags — the rest is plumbing on the server side.
+ */
+const tagSource: BeforeRequestMiddleware = (request) => {
+  request.headers = request.headers || {};
+  (request.headers as Record<string, string>)['X-Source'] = `zapier-${packageJson.version}`;
+  return request;
+};
+
 /**
  * Inject the API key into outgoing request bodies. PostalDataPI accepts the
  * API key as a top-level field on JSON request bodies (not as a header or
@@ -112,5 +126,5 @@ const handleBadResponses: AfterResponseMiddleware = (response, z) => {
   );
 };
 
-export const befores: BeforeRequestMiddleware[] = [includeApiKey];
+export const befores: BeforeRequestMiddleware[] = [tagSource, includeApiKey];
 export const afters: AfterResponseMiddleware[] = [handleBadResponses];

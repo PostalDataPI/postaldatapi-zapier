@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.4
+
+Adds source attribution so PostalDataPI server-side telemetry can distinguish Zapier traffic from SDK / MCP / direct-API traffic.
+
+* **New `X-Source` request header** — every outbound HTTP call sent by this integration now includes `X-Source: zapier-1.0.4`. PostalDataPI parses the header, sanitizes it (`[a-zA-Z0-9._/-]{1,64}`, falling back to `direct` when absent), and tags both `[PERF]` log lines and Sentry events with the source value.
+* **Why:** during the Zapier Beta window, support-ticket volume is the metric that auto-reverts our listing to Private. Source-tagged telemetry lets us answer "is this Zapier user about to file a ticket?" investigations directly from the server journal, instead of inferring from anonymous traffic patterns.
+* No behavioral changes. No auth changes. No C007 migration concern.
+
 ## 1.0.3
 
 Consolidates the operation surface around Creates only — Search variants removed.
